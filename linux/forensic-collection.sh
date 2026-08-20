@@ -505,6 +505,17 @@ echo "[INFO] Collecting server metadata"
     echo "===== date ====="
     date
 
+    echo
+    echo "===== timezone ====="
+    echo "date +%Z %z    : $(date +'%Z %z')"
+    echo "/etc/timezone  : $(cat /etc/timezone 2>/dev/null || echo 'not present')"
+    echo "/etc/localtime : $(readlink -f /etc/localtime 2>/dev/null || echo 'not present')"
+    echo "TZ env var     : ${TZ:-unset}"
+    if command -v timedatectl >/dev/null 2>&1; then
+        echo
+        timedatectl status 2>&1
+    fi
+
 } > "${FORENSICS_DIR}/serverinfo.txt"
 
 # -----------------------------------------------------------------------------
