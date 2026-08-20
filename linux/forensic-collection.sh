@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # =============================================================================
 # Linux Forensic Collection Script
@@ -734,4 +734,3 @@ if [ ${FAILCOUNT} -gt 0 ]; then
         echo "  - ${step}"
     done
 fi
-
