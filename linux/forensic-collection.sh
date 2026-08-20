@@ -1,5 +1,34 @@
 #!/bin/bash
 
+# =============================================================================
+# Linux Forensic Collection Script
+# =============================================================================
+# Performs a best-effort, point-in-time forensic collection on a single Linux
+# host, intended for incident response / compromise investigation.
+#
+# What it does, at a high level:
+#   - Verifies it is running as root before touching anything
+#   - Creates a locked-down (700) output directory under /root
+#   - Captures the most volatile evidence first (network state, active
+#     sessions, processes, open files, kernel modules, /proc), then moves on
+#     to less volatile data (logs, configs, accounts, packages, cron, Docker)
+#   - Scans SUID/SGID binaries and authorized_keys across all local
+#     mountpoints, not just "/"
+#   - Archives /var/log, the systemd journal, and /etc, with a disk-space
+#     check beforehand to avoid filling the disk mid-collection
+#   - Records server/timezone metadata so collected timestamps can be
+#     correctly interpreted
+#   - Tracks failed/skipped steps and prints a summary (including total
+#     collection size) at the end, rather than requiring a full log review
+#
+# It does NOT analyze or interpret anything it collects, does not modify the
+# host's configuration, and is not a substitute for a full disk/memory
+# image where deeper forensic analysis is required.
+#
+# Output: /root/forensics_<hostname>_<timestamp>/, plus a matching log file
+# and file manifest inside that directory.
+# =============================================================================
+
 # -----------------------------------------------------------------------------
 # Require root/elevated privileges before doing anything else.
 # Almost every step below (reading /etc/shadow, per-user crontabs, /proc for
