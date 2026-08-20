@@ -20,6 +20,8 @@
 #     correctly interpreted
 #   - Tracks failed/skipped steps and prints a summary (including total
 #     collection size) at the end, rather than requiring a full log review
+#   - Computes a SHA-256 checksum of every collected artifact for
+#     chain-of-custody integrity verification
 #
 # It does NOT analyze or interpret anything it collects, does not modify the
 # host's configuration, and is not a substitute for a full disk/memory
@@ -354,6 +356,10 @@ mkdir -p "${FORENSICS_DIR}/shell_history"
 
 cp /root/.bash_history \
     "${FORENSICS_DIR}/shell_history/root_bash_history" \
+    2>/dev/null
+
+cp /root/.zsh_history \
+    "${FORENSICS_DIR}/shell_history/root_zsh_history" \
     2>/dev/null
 
 find /home -name ".bash_history" \
@@ -702,6 +708,23 @@ tar_with_space_check "etc_backup_tar" /etc \
 # -----------------------------------------------------------------------------
 # Document collection completion
 # -----------------------------------------------------------------------------
+find "${FORENSICS_DIR}" -type f | sort \
+    > "${FORENSICS_DIR}/collection_manifest.txt"
+
+# -----------------------------------------------------------------------------
+# Per-file integrity hashing
+# Hash every collected artifact (not just the script) so later analysis can
+# prove the copies weren't altered after collection -- important for
+# chain-of-custody. This file cannot include a hash of itself (it doesn't
+# exist yet while being written), so the manifest is regenerated afterward
+# to at least list it alongside everything else.
+# -----------------------------------------------------------------------------
+echo "[INFO] Computing SHA-256 checksums of all collected artifacts"
+: > "${FORENSICS_DIR}/collection_manifest.sha256"
+while IFS= read -r f; do
+    sha256sum "${f}" >> "${FORENSICS_DIR}/collection_manifest.sha256" 2>/dev/null
+done < "${FORENSICS_DIR}/collection_manifest.txt"
+
 find "${FORENSICS_DIR}" -type f | sort \
     > "${FORENSICS_DIR}/collection_manifest.txt"
 
